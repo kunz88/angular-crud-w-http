@@ -1,0 +1,12 @@
+<app-places-container title="Available Places">
+  @if(isLoading() && !error()) {
+  <p class="fallback-text">loading..</p>
+
+  } @else if ( error()) {
+  <p class="fallback-text">
+    {{ error() }}
+  </p>
+  } @else if (places() && !isLoading()) {
+  <app-places [places]="places()!" />
+  }
+</app-places-container>
