@@ -1,20 +1,62 @@
-import { Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 
 import { Place } from './place.model';
+import { HttpClient } from '@angular/common/http';
+import { catchError, map, tap, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PlacesService {
   private userPlaces = signal<Place[]>([]);
+  private httpClient = inject(HttpClient);
 
   loadedUserPlaces = this.userPlaces.asReadonly();
 
-  loadAvailablePlaces() {}
+  private fetchPlaces(url: string, errorMessage: string) {
+    return (
+      this.httpClient
+        .get<{ places: Place[] }>(url /* ,{observe:'response'} */) // se settiamo questo campo con questo valore la risposta sarà un' oggetto http response
+        // setta invece il valore in {observe :events} per gestire più eventi prima della risposta
+        .pipe(
+          map(({ places }) => places),
+          catchError(
+            (
+              error // utile per utilizzare un funzione per trasformare l'errore
+            ) => throwError(() => new Error(errorMessage))
+          )
+        )
+    );
+  }
 
-  loadUserPlaces() {}
+  loadAvailablePlaces() {
+    return this.fetchPlaces(
+      'http://localhost:3000/places',
+      'Something went wrong..'
+    );
+  }
 
-  addPlaceToUserPlaces(place: Place) {}
+  loadUserPlaces() {
+    return this.fetchPlaces(
+      'http://localhost:3000/user-places',
+      'Something went wrong..'
+    ).pipe(
+      tap({
+        next: (userPlaces) => this.userPlaces.set(userPlaces),
+      })
+    );
+  }
+
+  addPlaceToUserPlaces(place: Place) {
+    const prevPlaces = this.userPlaces();
+
+    if (!prevPlaces.some((p) => p.id === place.id)) {
+    }
+    this.userPlaces.update;
+    return this.httpClient.put('http://localhost:3000/user-places', {
+      placeId: place.id,
+    });
+  }
 
   removeUserPlace(place: Place) {}
 }
