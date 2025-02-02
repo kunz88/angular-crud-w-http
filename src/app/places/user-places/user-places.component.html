@@ -7,6 +7,6 @@
     {{ error() }}
   </p>
   } @else if (places() && !isLoading()) {
-  <app-places [places]="places()" />
+  <app-places [places]="places()" (onSelectPlace)="onDeletePlace($event)" />
   }
 </app-places-container>

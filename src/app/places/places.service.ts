@@ -1,8 +1,9 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { Place } from './place.model';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, tap, throwError } from 'rxjs';
+import { ErrorService } from '../shared/error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,7 @@ import { catchError, map, tap, throwError } from 'rxjs';
 export class PlacesService {
   private userPlaces = signal<Place[]>([]);
   private httpClient = inject(HttpClient);
+  private errorService = inject(ErrorService);
 
   loadedUserPlaces = this.userPlaces.asReadonly();
 
@@ -23,7 +25,7 @@ export class PlacesService {
           catchError(
             (
               error // utile per utilizzare un funzione per trasformare l'errore
-            ) => throwError(() => new Error(errorMessage))
+            ) => throwError(() => new Error(error))
           )
         )
     );
@@ -51,12 +53,37 @@ export class PlacesService {
     const prevPlaces = this.userPlaces();
 
     if (!prevPlaces.some((p) => p.id === place.id)) {
+      this.userPlaces.update((prevPlaces) => [...prevPlaces, place]);
     }
-    this.userPlaces.update;
-    return this.httpClient.put('http://localhost:3000/user-places', {
-      placeId: place.id,
-    });
+
+    return this.httpClient
+      .put('http://localhost:3000/user-places', {
+        placeId: place.id,
+      })
+      .pipe(
+        catchError((error: { message: string }) => {
+          this.userPlaces.set(prevPlaces);
+          this.errorService.showError('Failed to add the selected place');
+          return throwError(() => Error(error.message));
+        })
+      );
   }
 
-  removeUserPlace(place: Place) {}
+  removeUserPlace(placeId: string) {
+    const prevPlaces = this.userPlaces();
+    this.userPlaces.update((prevPlaces) =>
+      prevPlaces.filter((p) => p.id !== placeId)
+    );
+    console.log('inside remove', prevPlaces);
+
+    return this.httpClient
+      .delete(`http://localhost:3000/user-places/${placeId}`)
+      .pipe(
+        catchError((error: { message: string }) => {
+          this.userPlaces.set(prevPlaces);
+          this.errorService.showError('Failed to remove the selected place');
+          return throwError(() => Error(error.message));
+        })
+      );
+  }
 }

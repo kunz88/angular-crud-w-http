@@ -14,7 +14,6 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); // allow all domains
   res.setHeader("Access-Control-Allow-Methods", "GET, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   next();
 });
 
@@ -67,13 +66,9 @@ app.delete("/user-places/:id", async (req, res) => {
   const userPlacesFileContent = await fs.readFile("./data/user-places.json");
   const userPlacesData = JSON.parse(userPlacesFileContent);
 
-  const placeIndex = userPlacesData.findIndex((place) => place.id === placeId);
-
-  let updatedUserPlaces = userPlacesData;
-
-  if (placeIndex >= 0) {
-    updatedUserPlaces.splice(placeIndex, 1);
-  }
+  const updatedUserPlaces = userPlacesData.filter(
+    (place) => !place.id === placeId
+  );
 
   await fs.writeFile(
     "./data/user-places.json",

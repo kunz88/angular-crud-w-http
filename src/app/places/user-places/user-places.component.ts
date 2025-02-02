@@ -13,15 +13,15 @@ import { Place } from '../place.model';
   imports: [PlacesContainerComponent, PlacesComponent],
 })
 export class UserPlacesComponent implements OnInit {
-  placesServices = inject(PlacesService);
+  placesService = inject(PlacesService);
   private destroyRef = inject(DestroyRef);
   isLoading = signal(false);
   error = signal<string>('');
-  places = this.placesServices.loadedUserPlaces; // gestiamo i dati derettamente nel service mentre la sottoscrizione all'observable , il loading ed gli errori nel componente
+  places = this.placesService.loadedUserPlaces; // gestiamo i dati direttamente nel service mentre la sottoscrizione all'observable , il loading ed gli errori nel componente
 
   ngOnInit() {
     this.isLoading.set(true);
-    const subscription = this.placesServices.loadUserPlaces().subscribe({
+    const subscription = this.placesService.loadUserPlaces().subscribe({
       error: (error: Error) => {
         console.log(error.message);
         this.error.set(error.message);
@@ -33,6 +33,14 @@ export class UserPlacesComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => {
       subscription.unsubscribe();
+    });
+  }
+
+  onDeletePlace(place: Place) {
+    const deleteSub = this.placesService.removeUserPlace(place.id).subscribe();
+
+    this.destroyRef.onDestroy(() => {
+      deleteSub.unsubscribe();
     });
   }
 }
